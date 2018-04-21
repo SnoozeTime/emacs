@@ -1,0 +1,8 @@
+
+(setq yas-snippet-dirs
+      '("~/.emacs.d/snippets/org-mode"                 ;; personal snippets
+	"~/.emacs.d/yasnippet-snippets/org-mode"
+	"~/.emacs.d/yasnippet-snippets/python-mode"
+	))
+
+(yas-global-mode 1) ;; or M-x yas-reload-all if you've started YASnippet already.

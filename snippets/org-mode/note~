@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Note
+# key: <not
+# --
+#+STARTUP: showall
+#+DATE: ${1:Year}:${2:month}:${3:day}
+#+DESCRIPTION: ${4:description of the meeting}

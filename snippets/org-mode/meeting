@@ -1,0 +1,12 @@
+# -*- mode: snippet -*-
+# name: meeting
+# key: <mee
+# --
+#-*- mode: org -*-
+#+STARTUP: showall
+#+DATE: ${1:Year}:${2:month}:${3:day}
+#+DESCRIPTION: ${4:description of the meeting}
+
+* Participants
+  ${5:participants}
+
