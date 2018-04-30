@@ -32,3 +32,4 @@
 ;; Each command that set bookmark will also save them.
 ;; That way, if emacs crash the bookmark will not be lost
 (setq bookmark-save-flag t)
+

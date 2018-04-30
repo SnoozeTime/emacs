@@ -1,0 +1,467 @@
+#+TITLE: Emacs Configuration
+#+AUTHOR: Benoit Eudier
+
+* Personal Information
+
+#+BEGIN_SRC emacs-lisp
+(setq user-full-name "Benoit Eudier")
+#+END_SRC
+
+* Packages
+
+Automatically install packages if there are not present. This works for packages
+that are in melpa.
+
+** For manual installation
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "/home/benoit/.emacs.d/manual-install/")
+#+END_SRC
+
+** Use Package and add sources
+
+#+BEGIN_SRC emacs-lisp
+(require 'package)
+(package-initialize)
+(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
+#+END_SRC
+
+** List of current packages
+
+#+BEGIN_SRC emacs-lisp
+(defvar local-packages '(helm
+			 projectile
+			 auto-complete
+			 epc
+			 jedi
+			 magit
+			 auctex
+			 gradle-mode
+			 ssh-agency
+			 yaml-mode
+			 elfeed
+			 yasnippet
+			 yasnippet-snippets
+			 org-bullets
+                         ace-window))
+#+END_SRC
+
+** Function to download and install a package if not present
+
+#+BEGIN_SRC emacs-lisp
+(defun uninstalled-packages (packages)
+  (delq nil
+	(mapcar (lambda (p)
+		  (if (package-installed-p p nil) nil p))
+		packages)))
+
+(let ((need-to-install (uninstalled-packages local-packages)))
+  (when need-to-install
+    (progn
+      (package-refresh-contents)
+      (dolist (p need-to-install)
+	(package-install p)))))
+#+END_SRC
+
+* OS Specific
+
+In windows I need to add the home dir.
+
+#+BEGIN_SRC emacs-lisp
+(if (string-equal system-type "window-nt")
+    (setenv "HOME" "c:/Users/Linus"))
+#+END_SRC
+
+* Basic customization
+Small configuration to make life easier
+
+** Highlight parenthesis when cursor is on one
+
+#+BEGIN_SRC emacs-lisp
+(show-paren-mode t)
+#+END_SRC
+
+** Show trailing whitespaces as red
+Not for the faint of heart.
+
+#+BEGIN_SRC emacs-lisp
+(setq-default show-trailing-whitespace t)
+#+END_SRC
+
+** Show column number at the bottom
+
+#+BEGIN_SRC emacs-lisp
+(setq column-number-mode t)
+#+END_SRC
+
+** No annoying sound
+
+#+BEGIN_SRC emacs-lisp
+(setq ring-bell-function 'ignore)
+#+END_SRC
+
+** Hide scrollbar and toolbar to reclaim some space
+
+#+BEGIN_SRC emacs-lisp
+(scroll-bar-mode -1)
+(tool-bar-mode -1)
+#+END_SRC
+
+** Autosave in a set folder
+This folder needs to be created on new emacs installation.
+
+#+BEGIN_SRC emacs-lisp
+(setq auto-save-file-name-transforms
+          `((".*" ,(concat user-emacs-directory "auto-save/") t)))
+#+END_SRC
+
+** Git password prompty
+
+#+BEGIN_SRC emacs-lisp
+(setenv "SSH_ASKPASS" "git-gui--askpass")
+(setenv "GIT_ASKPASS" "git-gui--askpass")
+#+END_SRC
+
+** Save bookmarks automatically
+
+Save the bookmark when setting so that even if emacs crash the information will not be lost.
+#+BEGIN_SRC emacs-lisp
+(setq bookmark-save-flag t)
+#+END_SRC
+
+* Use projectile to add projects
+
+Mainly using:
+- jump to project: C-c p p
+- Search in project: C-c p f
+
+#+BEGIN_SRC emacs-lisp
+(require 'projectile)
+(projectile-global-mode)
+#+END_SRC
+
+* Autocomplete
+
+#+BEGIN_SRC emacs-lisp
+(require 'auto-complete-config)
+(ac-config-default)
+#+END_SRC
+
+* Custom functions
+
+** Find the init file easily
+
+#+BEGIN_SRC emacs-lisp
+(defun find-user-init-file()
+  "Edit the user init file in another window"
+  (interactive)
+  (find-file-other-window (concat user-emacs-directory "configuration.org")))
+#+END_SRC
+
+** Duplicate a line
+
+Credit to [[https://stackoverflow.com/questions/88399/how-do-i-duplicate-a-whole-line-in-emacs][this stack overflow post.]]
+#+BEGIN_SRC emacs-lisp
+(defun duplicate-line (arg)
+  "Duplicate current line, leaving point in lower line."
+  (interactive "*p")
+
+  ;; save the point for undo
+  (setq buffer-undo-list (cons (point) buffer-undo-list))
+
+  ;; local variables for start and end of line
+  (let ((bol (save-excursion (beginning-of-line) (point)))
+        eol)
+    (save-excursion
+
+      ;; don't use forward-line for this, because you would have
+      ;; to check whether you are at the end of the buffer
+      (end-of-line)
+      (setq eol (point))
+
+      ;; store the line and disable the recording of undo information
+      (let ((line (buffer-substring bol eol))
+            (buffer-undo-list t)
+            (count arg))
+        ;; insert the line arg times
+        (while (> count 0)
+          (newline)         ;; because there is no newline in 'line'
+          (insert line)
+          (setq count (1- count)))
+        )
+
+      ;; create the undo information
+      (setq buffer-undo-list (cons (cons eol (point)) buffer-undo-list)))
+    ) ; end-of-let
+
+  ;; put the point in the lowest line and return
+  (next-line arg))
+#+END_SRC
+
+** Create a new note in the correct project folder
+
+Projects are just folder in ~/Nextcloud/notes/projects
+
+#+BEGIN_SRC emacs-lisp
+(require 'helm)
+
+(defvar my/project-path "~/Nextcloud/notes/projects")
+
+(defun my/pick-project ()
+  "Prompt user to pick a choice from a list."
+  (let ((choices (directory-files my/project-path)))
+    (message "%s" (completing-read "Open bookmark:" choices ))))
+
+(defun my/choose-note-name ()
+  "Prompt user to choose a note name"
+  (read-string "Choose the note name: "))
+
+
+(defun my/create-note-name ()
+  (let ((project-name (my/pick-project))
+	(note-name (my/choose-note-name)))
+    (concat my/project-path
+	    "/"
+            project-name
+	    "/"
+	    note-name
+	    ".org")))
+
+(defun my/create-new-project-note ()
+  (interactive)
+  (let ((filename (my/create-note-name)))
+    (find-file-other-window filename)
+    (org-mode)))
+#+END_SRC
+
+* Appearance
+
+I like tango dark, except for the comment color so I change it to dark grey instead of the
+whatever previous bright color.
+
+#+BEGIN_SRC emacs-lisp
+(load-theme 'tango-dark t)
+(set-face-foreground 'font-lock-comment-face "dark grey")
+#+END_SRC
+
+* Helm
+
+Rebind native emacs to helm
+#+BEGIN_SRC emacs-lisp
+(require 'helm)
+
+(global-set-key (kbd "M-x") #'helm-M-x)
+(global-set-key (kbd "C-x r b") #'helm-filtered-bookmarks)
+(global-set-key (kbd "C-x C-f") #'helm-find-files)
+#+END_SRC
+
+Fuzzy matching for faster search
+#+BEGIN_SRC emacs-lisp
+(setq helm-fuzzy-match t)
+(setq helm-completion-in-region-fuzzy-match t)
+#+END_SRC
+
+Activate mode
+#+BEGIN_SRC emacs-lisp
+(helm-mode 1)
+#+END_SRC
+
+* Org-mode
+
+#+BEGIN_SRC emacs-lisp
+;; Enable Org mode
+(require 'org)
+#+END_SRC
+
+** Org mode files finish by .org
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+#+END_SRC
+
+** Show code highlighting in source blocks
+
+#+BEGIN_SRC emacs-lisp
+(setq org-src-fontify-natively t)
+#+END_SRC
+
+** Nicer bullets
+
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook
+	  (lambda ()
+	    (org-bullets-mode t)))
+(setq org-hide-leading-stars t)
+#+END_SRC
+
+** Set file for agenda
+
+#+BEGIN_SRC emacs-lisp
+(setq org-agenda-files '("~/Nextcloud/gtd/inbox.org"
+			 "~/Nextcloud/gtd/gtd.org"
+			 "~/Nextcloud/gtd/tickler.org"
+			 "~/Nextcloud/gtd/agenda_entry.org"))
+#+END_SRC
+
+** Set capture templates
+
+This is super useful to take notes while editing something else. Just use it as much as possible and
+classify notes later
+
+#+BEGIN_SRC emacs-lisp
+(define-key global-map "\C-cc" 'org-capture)
+#+END_SRC
+
+Simple as possible
+#+BEGIN_SRC emacs-lisp
+(setq org-capture-templates '(("t" "Todo [inbox]" entry
+                               (file+headline "~/Nextcloud/gtd/inbox.org" "Tasks")
+                               "* TODO %i%?")
+                              ))
+#+END_SRC
+
+** Refile target
+
+Find the headlines in the given files
+
+#+BEGIN_SRC emacs-lisp
+(setq org-refile-targets '(("~/Nextcloud/gtd/gtd.org" :maxlevel . 3)
+                           ("~/Nextcloud/gtd/someday.org" :level . 1)
+                           ("~/Nextcloud/gtd/tickler.org" :maxlevel . 2)))
+#+END_SRC
+
+** Some agenda config
+
+I don't use this so much so it might be removed one day
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c a") 'org-agenda)
+(setq org-todo-keywords '("TODO" "STARTED" "WAITING" "DONE"))
+(setq org-agenda-include-diary t)
+(setq org-agenda-include-all-todo t)
+
+(setq org-agenda-custom-commands
+      '(("c" "Simple agenda view"
+         ((agenda "")
+          (alltodo "")))))
+#+END_SRC
+
+* Yasnippet
+
+Set the path of snippets
+
+#+BEGIN_SRC emacs-lisp
+(setq yas-snippet-dirs
+      '("~/.emacs.d/snippets"
+	))
+
+(yas-global-mode 1)
+#+END_SRC
+
+* TODO Python config
+
+Not satisfied with that. To modify
+
+#+BEGIN_SRC emacs-lisp
+(require 'jedi)
+;; Hook up to autocomplete
+(add-to-list 'ac-sources 'ac-source-jedi-direct)
+;; Enable for python mode
+(add-hook 'python-mode-hook 'jedi:setup)
+
+;; Where all the virtual envs are
+;; (defvar virtualenv-path "/home/benoit/.local/share/virtualenvs")
+
+;;(setq jedi:server-args
+;;      '("--virtual-env" "/home/benoit/.local/share/virtualenvs/triarbitrage-bot-JykzT8-1"))
+
+(setq jedi:complete-on-dot t)
+#+END_SRC
+
+* Latex configuration
+
+#+BEGIN_SRC emacs-lisp
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+(setq TeX-save-query nil)
+(setq TeX-PDF-mode t)
+#+END_SRC
+
+* Elfeed (RSS reader)
+
+** List of source
+Set the list of source here
+
+#+BEGIN_SRC emacs-lisp
+(setq elfeed-feeds
+      '("http://feeds.feedburner.com/codinghorror"
+	"http://importpython.com/blog/feed/"
+	"http://pragmaticemacs.com/feed/"
+	"https://waitbutwhy.com/feed"))
+#+END_SRC
+
+** Mark all as read - custom function
+
+#+BEGIN_SRC emacs-lisp
+(defun elfeed-mark-all-as-read()
+  (interactive)
+  (mark-whole-buffer)
+  (elfeed-search-untag-all-unread))
+#+END_SRC
+
+* Acejump config
+
+Nice way to jump to a word with visual hints
+
+** Add manually
+
+Not in melpa so have to be loaded here.
+#+BEGIN_SRC emacs-lisp
+(autoload
+  'ace-jump-mode
+  "ace-jump-mode"
+  "Emacs quick move minor mode"
+  t)
+#+END_SRC
+
+** Limit acejump to the current window
+
+#+BEGIN_SRC emacs-lisp
+(setq ace-jump-mode-scope ‘window)
+#+END_SRC
+
+* Custom keybindings
+
+** Custom functions
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c n") 'my/create-new-project-note)
+(global-set-key (kbd "C-c u") 'find-user-init-file)
+(global-set-key (kbd "C-d") 'duplicate-line)
+#+END_SRC
+
+** Acejump
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-c SPC") 'ace-jump-mode)
+#+END_SRC
+
+In case of orgmode, register local binding to override orgmode default
+
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook
+          (lambda ()
+            (local-set-key (kbd "\C-c SPC") 'ace-jump-mode)))
+#+END_SRC
+
+** Ace window
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "M-o") 'ace-window)
+#+END_SRC
+
+
+
+
+
+

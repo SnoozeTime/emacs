@@ -1,91 +1,14 @@
-
 ;; init.el -- Global settings
 
 ;; Increase the garbage collection threshold to 500 MB to ease startup
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
 (setq gc-cons-threshold (* 500 1024 1024))
 
-;; -----------------------------------------
-;; PACKAGES
-;; ----------------------------------------
-(require 'package)
-(package-initialize)
-(add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-(add-to-list 'package-archives '("org" . "http://orgmode.org/elpa/") t)
-
-(defvar local-packages '(helm
-			 projectile
-			 auto-complete
-			 epc
-			 jedi
-			 magit
-			 auctex
-			 gradle-mode
-			 ssh-agency
-			 yaml-mode
-			 elfeed
-			 yasnippet
-			 yasnippet-snippets
-			 org-bullets))
-
-(defun uninstalled-packages (packages)
-  (delq nil
-	(mapcar (lambda (p)
-		  (if (package-installed-p p nil) nil p))
-		packages)))
-
-(let ((need-to-install (uninstalled-packages local-packages)))
-  (when need-to-install
-    (progn
-      (package-refresh-contents)
-      (dolist (p need-to-install)
-	(package-install p)))))
-
-;; --------------------------------
-;; BASIC CUSTOMIZATION
-;; --------------------------------
-
-(load-file "~/.emacs.d/config/windows.el")
-(load-file "~/.emacs.d/config/basic.el")
-
-
-;; ----------------------------------
-;; Load external package configuration
-;; ------------------------------------
-
-;; Project management
-(require 'projectile)
-(projectile-global-mode)
-
-;; autocomplete
-(require 'auto-complete-config)
-(ac-config-default)
-
-;; Bunch of stuff
-(load-file "~/.emacs.d/config/helm_config.el")
-(load-file "~/.emacs.d/config/navigation.el")
-(load-file "~/.emacs.d/config/python_config.el")
-(load-file "~/.emacs.d/config/tex_config.el")
-(load-file "~/.emacs.d/config/orgconf.el")
-(load-file "~/.emacs.d/config/elfeed_conf.el")
-(load-file "~/.emacs.d/config/custom-keybindings.el")
-(load-file "~/.emacs.d/config/yasnippet_config.el")
-
-;; --------------------------------------
-;; JAVA stuff
-;; --------------------------------------
-(require 'gradle-mode)
-
-(gradle-mode 1)
-
-;; ---------------------------------------------
-;; Theme and other
-;; ---------------------------------------------
-
-;; Decrease the garbage collection to default
-(add-hook 'after-init-hook (lambda () (setq gc-cons-threshold (* 5 1024 1024))))
-
-;; Tango dark good for my eyes :)
-(load-theme 'tango-dark t)
-
-;; Comments are light grey
-(set-face-foreground 'font-lock-comment-face "dark grey")
+;;; Load the config
+(org-babel-load-file (concat user-emacs-directory "configuration.org"))

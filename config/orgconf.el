@@ -2,6 +2,7 @@
 (require 'org)
 ;; Make Org mode work with files ending in .org
 (add-to-list 'auto-mode-alist '("\\.org$" . org-mode))
+(setq org-src-fontify-natively t)
 
 ;; Nicer bullets
 (add-hook 'org-mode-hook
@@ -10,7 +11,6 @@
 (setq org-hide-leading-stars t)
 
 ;; Set up org capture to take notes on the fly
-(setq org-default-notes-file "C:/Users/Linus/Nextcloud/notes/notes.org")
 (define-key global-map "\C-cc" 'org-capture)
 
 
@@ -18,7 +18,6 @@
 			 "~/Nextcloud/gtd/gtd.org"
 			 "~/Nextcloud/gtd/tickler.org"
 			 "~/Nextcloud/gtd/agenda_entry.org"))
-
 (setq org-capture-templates '(("t" "Todo [inbox]" entry
                                (file+headline "~/Nextcloud/gtd/inbox.org" "Tasks")
                                "* TODO %i%?")
