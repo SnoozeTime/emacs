@@ -428,7 +428,7 @@ Not in melpa so have to be loaded here.
 ** Limit acejump to the current window
 
 #+BEGIN_SRC emacs-lisp
-(setq ace-jump-mode-scope ‘window)
+(setq ace-jump-mode-scope 'window)
 #+END_SRC
 
 * Custom keybindings
