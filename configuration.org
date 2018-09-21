@@ -114,6 +114,9 @@ This folder needs to be created on new emacs installation.
 #+BEGIN_SRC emacs-lisp
 (setq auto-save-file-name-transforms
           `((".*" ,(concat user-emacs-directory "auto-save/") t)))
+
+(setq backup-directory-alist `(("." . "~/.saves")))
+
 #+END_SRC
 
 ** Git password prompty
@@ -207,6 +210,7 @@ Projects are just folder in ~/Nextcloud/notes/projects
 (require 'helm)
 
 (defvar my/project-path "~/Nextcloud/notes/projects")
+(defvar my/daily-log-aurora "~/Nextcloud/notes/projects/aurora")
 
 (defun my/pick-project ()
   "Prompt user to pick a choice from a list."
@@ -233,7 +237,21 @@ Projects are just folder in ~/Nextcloud/notes/projects
   (let ((filename (my/create-note-name)))
     (find-file-other-window filename)
     (org-mode)))
+
+(defun my/create-daily-log-note ()
+  (interactive)
+  (let ((note-name (concat "daily-log-" (format-time-string "%d-%m-%Y") ".org")))
+    (let ((note-path (concat my/daily-log-aurora "/" note-name)))
+      (find-file-other-window note-path)
+      (org-mode)
+
+      ;; If the buffer is empty, expand some template
+      (if (= 0 (buffer-size))
+        (yas-expand-snippet "#+STARTUP: showall
+                             #+DATE: `(format-time-string \"%Y:%m:%d\")`$0
+                             #+DESCRIPTION: Daily log")))))
 #+END_SRC
+
 
 * Appearance
 
@@ -347,6 +365,20 @@ I don't use this so much so it might be removed one day
           (alltodo "")))))
 #+END_SRC
 
+** When exporting code to latex, use minted (color + wrapping)
+
+#+BEGIN_SRC emacs-lisp
+(setq org-latex-listings 'minted
+      org-latex-packages-alist '(("" "minted"))
+      org-latex-pdf-process
+      '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"))
+
+(setq org-latex-minted-options '(("breaklines" "true")
+                                 ("breakanywhere" "true")
+                                 ("autogobble" "true")))
+#+END_SRC
+
 * Yasnippet
 
 Set the path of snippets
@@ -437,6 +469,7 @@ Not in melpa so have to be loaded here.
 #+BEGIN_SRC emacs-lisp
 (global-set-key (kbd "C-c n") 'my/create-new-project-note)
 (global-set-key (kbd "C-c u") 'find-user-init-file)
+(global-set-key (kbd "C-c d") 'my/create-daily-log-note)
 (global-set-key (kbd "C-d") 'duplicate-line)
 #+END_SRC
 
@@ -461,7 +494,22 @@ In case of orgmode, register local binding to override orgmode default
 #+END_SRC
 
 
+** Multiple cursors
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
+(global-set-key (kbd "C->") 'mc/mark-next-like-this)
+(global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+(global-set-key (kbd "C-c C-<") 'mc/mark-all-like-this)
+#+END_SRC
 
 
+* OCAML
 
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "/home/benoit/.opam/system/share/emacs/site-lisp")
+(setq exec-path-from-shell-arguments '("-i"))
 
+(require 'ocp-indent)
+(require 'merlin)
+#+END_SRC
